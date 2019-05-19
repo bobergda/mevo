@@ -2,9 +2,7 @@
 day=`date "+%Y%m%d"`
 now=`date "+%Y%m%d_%H%M%S"`
 
-curlx(){
-result=$(curl $1 \
--H 'authority: rowermevo.pl' \
+curl_header="-H 'authority: rowermevo.pl' \
 -H 'pragma: no-cache' \
 -H 'cache-control: no-cache' \
 -H 'upgrade-insecure-requests: 1' \
@@ -13,23 +11,32 @@ result=$(curl $1 \
 -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' \
 -H 'accept-encoding: gzip, deflate' \
 -H 'accept-language: pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7' \
---compressed -s)
+--compressed"
+
+refresh_key(){
+  eval curl https://rowermevo.pl/mapa-stacji/ $curl_header -s | grep 'ocations.js?key=\w*' -o > /home/ubuntu/mevo/tmp_key
+  cat /home/ubuntu/mevo/tmp_key
 }
 
 mkdir -p /home/ubuntu/mevo/js/$day
 
 echo `date +"[%Y-%m-%d %H:%M:%S]"` start
-curlx https://rowermevo.pl/mapa-stacji/
-link=$(echo $result |grep 'locations.js?key=\w*' -o)
-echo $link
+code=$(eval curl https://rowermevo.pl/l$(cat /home/ubuntu/mevo/tmp_key) $curl_header -w "%{http_code}" -s -o /home/ubuntu/mevo/js/$day/$now)
 
-curlx https://rowermevo.pl/$link
-echo $result > /home/ubuntu/mevo/js/$day/$now
-echo  `date +"[%Y-%m-%d %H:%M:%S]"` js
+if [ $code != "200" ]
+then
+  echo "HTTP $code"
+  sleep 30
+  refresh_key
+  code=$(eval curl https://rowermevo.pl/l$(cat /home/ubuntu/mevo/tmp_key) $curl_header -w "%{http_code}" -s -o /home/ubuntu/mevo/js/$day/$now)
+  if [ $code != "200" ]
+  then
+    echo "Error after refresh_key HTTP $code"
+  fi
+fi
 
+echo `date +"[%Y-%m-%d %H:%M:%S]"` stop
 
+# CSV
 #mkdir -p /home/ubuntu/mevo/csv/$day
 #wget https://rowermevo.pl/maps/locations.txt?key=jF5puHQe3CqssPZh -O /home/ubuntu/mevo/csv/$day/$now.csv
-#echo `date +"[%Y-%m-%d %H:%M:%S]"` csv
-#wget https://rowermevo.pl/locations.js?key=4f54c0c4aef018bd8ecea650d8b364e3744448ca -O /home/ubuntu/mevo/js/$day/$now
-#echo  `date +"[%Y-%m-%d %H:%M:%S]"` js
