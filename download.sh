@@ -40,4 +40,3 @@ echo `date +"[%Y-%m-%d %H:%M:%S]"` stop
 # CSV
 #mkdir -p /home/ubuntu/mevo/csv/$day
 #wget https://rowermevo.pl/maps/locations.txt?key=jF5puHQe3CqssPZh -O /home/ubuntu/mevo/csv/$day/$now.csv
-
